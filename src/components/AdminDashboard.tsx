@@ -94,18 +94,23 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
     setNewProduct((prev) => ({ ...prev, category: activeCategory }));
   }, [activeCategory]);
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please check permissions.');
+  // Remove direct call to startCamera from Take Photo button
+  // Add useEffect to start camera when isCameraActive and videoRef.current are ready
+  React.useEffect(() => {
+    if (isCameraActive && videoRef.current) {
+      (async () => {
+        try {
+          console.log('startCamera called from useEffect');
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoRef.current.srcObject = stream;
+          console.log('Camera stream started');
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          alert('Unable to access camera. Please check permissions.');
+        }
+      })();
     }
-  };
+  }, [isCameraActive, videoRef]);
 
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -116,22 +121,26 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
   };
 
   const capturePhoto = () => {
+    console.log('capturePhoto called');
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       const context = canvas.getContext('2d');
-      
+      console.log('video/videoWidth/videoHeight:', video, video.videoWidth, video.videoHeight);
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
       if (context) {
         context.drawImage(video, 0, 0);
-        // Use highest JPEG quality
         const imageDataUrl = canvas.toDataURL('image/jpeg', 1.0);
         setCapturedImage(imageDataUrl);
         setNewProduct({ ...newProduct, image: imageDataUrl });
         stopCamera();
+        console.log('Photo captured and set');
+      } else {
+        console.log('Canvas context is null');
       }
+    } else {
+      console.log('videoRef.current or canvasRef.current is null');
     }
   };
 
@@ -633,7 +642,7 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
                       ) : (
                         <div className="flex space-x-3">
                           <button
-                            onClick={startCamera}
+                            onClick={() => setIsCameraActive(true)}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center space-x-2"
                           >
                             <Camera className="h-5 w-5" />

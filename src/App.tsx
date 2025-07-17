@@ -254,31 +254,30 @@ function App() {
 
       <Banner />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4">
         {/* Breadcrumb */}
-        <div className="text-sm text-gray-600 mb-4">
-          <span>Home</span> {" > "} <span>Toys & Games</span> {" > "} <span className="text-gray-900">All Products</span>
+        <div className="text-sm text-gray-600 mb-4 overflow-x-auto whitespace-nowrap">
+          <span>Home</span> {' > '} <span>Toys & Games</span> {' > '} <span className="text-gray-900">All Products</span>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
           {showSidebar && (
-            <div className="hidden lg:block">
+            <div className="hidden lg:block min-w-[180px] max-w-[220px] w-full">
               <Sidebar onFilterChange={handleFilterChange} products={products} />
             </div>
           )}
 
           {/* Main content */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Results header */}
-            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 bg-white p-2 sm:p-4 rounded-lg shadow-sm gap-2">
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600">
                   1-12 of over 5,000 results for <strong>"toys and stationary"</strong>
                 </span>
               </div>
-              
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setShowSidebar(!showSidebar)}
                   className="lg:hidden flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
@@ -286,7 +285,6 @@ function App() {
                   <Filter className="h-4 w-4" />
                   <span>Filters</span>
                 </button>
-
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setViewMode('grid')}
@@ -301,10 +299,9 @@ function App() {
                     <List className="h-4 w-4" />
                   </button>
                 </div>
-
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">Sort by:</span>
-                  <select 
+                  <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -320,16 +317,16 @@ function App() {
             </div>
 
             {/* Products grid */}
-            <div className={`grid gap-6 transition-all duration-300 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+            <div className={`grid gap-4 sm:gap-6 transition-all duration-300 ${
+              viewMode === 'grid'
+                ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' // xs: custom, fallback to 1-col
                 : 'grid-cols-1'
             }`}>
               {Object.entries(productsByCategory).map(([category, prods]) => (
                 <React.Fragment key={category}>
                   <div
                     id={`category-section-${category}`}
-                    className="col-span-full text-2xl font-bold text-blue-700 mb-2 mt-8 border-b border-blue-200 pb-1"
+                    className="col-span-full text-lg sm:text-2xl font-bold text-blue-700 mb-2 mt-8 border-b border-blue-200 pb-1"
                   >
                     {category}
                   </div>
@@ -352,7 +349,7 @@ function App() {
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-8 overflow-x-auto">
               <div className="flex items-center space-x-2">
                 <button className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">
                   Previous
@@ -361,8 +358,8 @@ function App() {
                   <button
                     key={page}
                     className={`px-3 py-2 border rounded-md ${
-                      page === 1 
-                        ? 'bg-blue-600 text-white border-blue-600' 
+                      page === 1
+                        ? 'bg-blue-600 text-white border-blue-600'
                         : 'border-gray-300 hover:bg-gray-50'
                     }`}
                   >
@@ -435,8 +432,8 @@ function App() {
 
       {/* Wishlist Modal */}
       {showWishlist && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-2">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-xs sm:max-w-lg md:max-w-2xl p-4 sm:p-6 relative">
             <button
               onClick={() => setShowWishlist(false)}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -444,7 +441,7 @@ function App() {
             >
               &times;
             </button>
-            <h2 className="text-2xl font-bold mb-4 text-blue-700">Your Wishlist</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-blue-700">Your Wishlist</h2>
             {wishlist.length === 0 ? (
               <div className="text-gray-500 text-center py-8">No items in your wishlist.</div>
             ) : (
