@@ -12,6 +12,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { firestore } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
@@ -59,6 +61,7 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [offerInput, setOfferInput] = useState(offer);
+  const [cameraFacingMode, setCameraFacingMode] = React.useState<'user' | 'environment'>('environment');
 
   // Order cancellation state
   const [ordersState, setOrdersState] = useState(orders);
@@ -101,7 +104,9 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
       (async () => {
         try {
           console.log('startCamera called from useEffect');
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: cameraFacingMode }
+          });
           videoRef.current.srcObject = stream;
           console.log('Camera stream started');
         } catch (error) {
@@ -110,7 +115,7 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
         }
       })();
     }
-  }, [isCameraActive, videoRef]);
+  }, [isCameraActive, videoRef, cameraFacingMode]);
 
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
@@ -239,9 +244,10 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
     stopCamera();
   };
 
-  const handleOfferUpdate = () => {
+  const handleOfferUpdate = async () => {
     setOffer(offerInput);
-    alert('Offer updated!');
+    await setDoc(doc(firestore, 'offers/current'), { value: offerInput });
+    alert('Offer updated and saved for all users!');
   };
 
   const ordersByDate: Record<string, number> = {};
@@ -636,6 +642,14 @@ export default function AdminDashboard({ onLogout, products, onUpdateProducts, o
                               className="bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-full"
                             >
                               <X className="h-6 w-6" />
+                            </button>
+                            <button
+                              onClick={() => setCameraFacingMode((prev) => prev === 'user' ? 'environment' : 'user')}
+                              className="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-full"
+                              title="Switch Camera"
+                              type="button"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                             </button>
                           </div>
                         </div>

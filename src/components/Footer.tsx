@@ -1,7 +1,7 @@
 import React from 'react';
-import { MapPin, Phone, Clock, Mail, Star, User } from 'lucide-react';
+import { MapPin, Phone, Clock, Mail, Star, User, LogIn } from 'lucide-react';
 
-export default function Footer() {
+export default function Footer({ onAdminLogin }: { onAdminLogin?: () => void }) {
   const workingHours = [
     { day: 'Monday', hours: '8 am–10 pm' },
     { day: 'Tuesday', hours: '8 am–10 pm' },
@@ -238,6 +238,16 @@ export default function Footer() {
                 Making childhood magical, one toy at a time ✨
               </p>
             </div>
+            {onAdminLogin && (
+              <div className="flex justify-end mt-8">
+                <button
+                  onClick={onAdminLogin}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow flex items-center gap-2 text-sm"
+                >
+                  <LogIn className="h-5 w-5" /> Admin Login
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Grid, List, LogIn } from 'lucide-react';
+import { Filter, Grid, List, LogIn, LogOut } from 'lucide-react';
 import WelcomePage from './components/WelcomePage';
 import Header from './components/Header';
 import ShopkeeperLogin from './components/ShopkeeperLogin';
@@ -11,6 +11,13 @@ import Footer from './components/Footer';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import OrderConfirmation from './components/OrderConfirmation';
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import UserLogin from './components/UserLogin';
+import { auth } from './firebase';
+import { Modal } from './components/Modal'; // (Assume a simple Modal component or use a div overlay)
+import { firestore } from './firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface Product {
   id: number;
@@ -61,10 +68,25 @@ function App() {
   const isWishlisted = (product: Product) => wishlist.some((p) => p.id === product.id);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showOfferPopup, setShowOfferPopup] = useState(!!offer);
+  const [showUserLogin, setShowUserLogin] = useState(false);
+  const [user, setUser] = useState<any>(auth.currentUser);
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
+
+  React.useEffect(() => {
+    const unsub = auth.onAuthStateChanged((u) => setUser(u));
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
-    setShowOfferPopup(!!offer);
+    if (offer) setShowOfferPopup(true);
   }, [offer]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(firestore, 'offers/current'), (docSnap) => {
+      setOffer(docSnap.exists() ? docSnap.data().value : '');
+    });
+    return () => unsub();
+  }, []);
 
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -170,20 +192,27 @@ function App() {
     setCartItems(cartItems.filter(item => item.id !== id));
   };
 
+  // Update handleCheckout to require user login
   const handleCheckout = () => {
+    if (!user) {
+      setShowUserLogin(true);
+      return;
+    }
     setShowCart(false);
     setShowCheckout(true);
   };
 
+  // When placing an order, store user email
   const handlePlaceOrder = (orderInfo: any) => {
-    setOrders(prev => [...prev, orderInfo]);
+    const orderWithUser = { ...orderInfo, userEmail: user?.email || null };
+    setOrders(prev => [...prev, orderWithUser]);
     // Send to Google Sheets via SheetDB (user's endpoint)
     fetch('https://sheetdb.io/api/v1/cf4t3su1r421n', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: orderInfo })
+      body: JSON.stringify({ data: orderWithUser })
     });
-    setOrderData(orderInfo);
+    setOrderData(orderWithUser);
     setShowCheckout(false);
     setShowOrderConfirmation(true);
     setCartItems([]); // Clear cart after order
@@ -204,6 +233,11 @@ function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
   };
+
+  const MyOrdersButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props}>My Orders</button>
+  );
+  MyOrdersButton.displayName = 'MyOrdersButton';
 
   if (showWelcome) {
     return <WelcomePage onEnterShop={() => setShowWelcome(false)} offer={offer} />;
@@ -232,6 +266,27 @@ function App() {
         onWishlistToggle={() => setShowWishlist(true)}
         wishlistCount={wishlist.length}
         onLoginClick={() => setShowLogin(true)}
+        userActions={
+          user ? (
+            <div className="flex items-center gap-2">
+              <MyOrdersButton onClick={() => setShowOrdersModal(true)} />
+              <button
+                onClick={async () => { await auth.signOut(); }}
+                className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowUserLogin(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+            >
+              Sign in for a magical experience! <span role="img" aria-label="smile">😊</span>
+            </button>
+          )
+        }
       />
       
       {/* Offer Popup */}
@@ -319,7 +374,7 @@ function App() {
             {/* Products grid */}
             <div className={`grid gap-4 sm:gap-6 transition-all duration-300 ${
               viewMode === 'grid'
-                ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' // xs: custom, fallback to 1-col
+                ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
                 : 'grid-cols-1'
             }`}>
               {Object.entries(productsByCategory).map(([category, prods]) => (
@@ -374,8 +429,8 @@ function App() {
           </div>
         </div>
       </div>
-      
-      <Footer />
+
+      <Footer onAdminLogin={() => setShowLogin(true)} />
 
       {/* Mobile sidebar overlay */}
       {showSidebar && (
@@ -397,7 +452,7 @@ function App() {
         </div>
       )}
 
-      {/* Login Modal */}
+      {/* Shopkeeper Login Modal */}
       {showLogin && (
         <ShopkeeperLogin
           onLogin={handleLogin}
@@ -454,6 +509,48 @@ function App() {
                     onToggleWishlist={handleToggleWishlist}
                     isWishlisted={true}
                   />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* User Login Modal */}
+      <UserLogin
+        isOpen={showUserLogin}
+        onClose={() => setShowUserLogin(false)}
+        onLoginSuccess={() => setShowUserLogin(false)}
+      />
+
+      {/* My Orders Modal */}
+      {showOrdersModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-2">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+            <button
+              onClick={() => setShowOrdersModal(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              aria-label="Close orders"
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-blue-700">My Orders</h2>
+            {orders.filter(o => o.userEmail === user?.email).length === 0 ? (
+              <div className="text-gray-500 text-center py-8">No orders yet.</div>
+            ) : (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {orders.filter(o => o.userEmail === user?.email).map((order, idx) => (
+                  <div key={idx} className="border rounded-lg p-4 shadow-sm bg-gray-50">
+                    <div className="text-xs text-gray-500 mb-1">{order.orderDate ? new Date(order.orderDate).toLocaleString() : ''}</div>
+                    <div className="font-semibold mb-2">Items:</div>
+                    <ul className="list-disc pl-5 mb-2">
+                      {order.items && order.items.map((item: any, i: number) => (
+                        <li key={i}>{item.name} x{item.quantity}</li>
+                      ))}
+                    </ul>
+                    <div className="text-sm text-gray-700 mb-1">Total: <span className="font-bold">₹{order.total}</span></div>
+                    <div className="text-xs text-gray-600">Status: <span className="font-semibold">{order.status || 'Placed'}</span></div>
+                  </div>
                 ))}
               </div>
             )}
