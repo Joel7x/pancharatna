@@ -18,6 +18,8 @@ import { auth } from './firebase';
 import { Modal } from './components/Modal'; // (Assume a simple Modal component or use a div overlay)
 import { firestore } from './firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import ProductManager from './components/ProductManager';
+import SecureAdminAuth from './components/SecureAdminAuth';
 
 interface Product {
   id: number;
@@ -58,6 +60,9 @@ function App() {
   const [offer, setOffer] = useState<string>('');
   const [orders, setOrders] = useState<any[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  
   const handleToggleWishlist = (product: Product) => {
     setWishlist((prev) =>
       prev.some((p) => p.id === product.id)
@@ -243,16 +248,15 @@ function App() {
     return <WelcomePage onEnterShop={() => setShowWelcome(false)} offer={offer} />;
   }
 
-  if (isLoggedIn) {
+  if (showAdminLogin) {
     return (
-      <AdminDashboard
-        onLogout={handleLogout}
-        products={products}
-        onUpdateProducts={setProducts}
-        offer={offer}
-        setOffer={setOffer}
-        orders={orders}
-      />
+      <div>
+        <SecureAdminAuth isAdmin={isAdmin} setIsAdmin={setIsAdmin} />
+        {isAdmin && <ProductManager isAdmin={isAdmin} />}
+        <div style={{textAlign: 'center', marginTop: 24}}>
+          <button onClick={() => setShowAdminLogin(false)} style={{color: '#667eea', textDecoration: 'underline', fontWeight: 500}}>Back to Shop</button>
+        </div>
+      </div>
     );
   }
 
@@ -265,27 +269,36 @@ function App() {
         onCartToggle={() => setShowCart(true)}
         onWishlistToggle={() => setShowWishlist(true)}
         wishlistCount={wishlist.length}
-        onLoginClick={() => setShowLogin(true)}
+        onLoginClick={() => setShowLogin(true)} // This is for shopkeeper login only
         userActions={
-          user ? (
-            <div className="flex items-center gap-2">
-              <MyOrdersButton onClick={() => setShowOrdersModal(true)} />
-              <button
-                onClick={async () => { await auth.signOut(); }}
-                className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600 transition-colors"
-                title="Logout"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
-          ) : (
+          <>
             <button
-              onClick={() => setShowUserLogin(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+              onClick={() => setShowAdminLogin(true)} // This is for admin login only
+              className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-blue-600 hover:to-purple-500 text-white px-3 py-1 rounded text-sm font-semibold shadow transition-all duration-200"
+              style={{marginRight: 8}}
             >
-              Sign in for a magical experience! <span role="img" aria-label="smile">😊</span>
+              Admin Login
             </button>
-          )
+            {user ? (
+              <div className="flex items-center gap-2">
+                <MyOrdersButton onClick={() => setShowOrdersModal(true)} />
+                <button
+                  onClick={async () => { await auth.signOut(); }}
+                  className="p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-red-600 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowUserLogin(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+              >
+                Sign in for a magical experience! <span role="img" aria-label="smile">😊</span>
+              </button>
+            )}
+          </>
         }
       />
       

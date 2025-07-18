@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Phone, Clock, Mail, Star, User, LogIn } from 'lucide-react';
+import { MapPin, Phone, Clock, Mail, Star, User, LogIn, Facebook, Instagram, Twitter, MessageCircle } from 'lucide-react';
 
 export default function Footer({ onAdminLogin }: { onAdminLogin?: () => void }) {
   const workingHours = [
@@ -229,7 +229,21 @@ export default function Footer({ onAdminLogin }: { onAdminLogin?: () => void }) 
                 <p className="text-sm text-gray-400">Toys & Stationary Shop</p>
               </div>
             </div>
-            
+            {/* Social Media Icons */}
+            <div className="flex space-x-4 mb-4 md:mb-0">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:text-blue-400 transition-colors">
+                <Facebook className="h-6 w-6" />
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-pink-400 transition-colors">
+                <Instagram className="h-6 w-6" />
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="hover:text-blue-300 transition-colors">
+                <Twitter className="h-6 w-6" />
+              </a>
+              <a href="https://wa.me/918806062862" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="hover:text-green-400 transition-colors">
+                <MessageCircle className="h-6 w-6" />
+              </a>
+            </div>
             <div className="text-center md:text-right">
               <p className="text-gray-400 text-sm">
                 © 2024 Pancharatna Toys & Stationary. All rights reserved.
@@ -238,16 +252,6 @@ export default function Footer({ onAdminLogin }: { onAdminLogin?: () => void }) 
                 Making childhood magical, one toy at a time ✨
               </p>
             </div>
-            {onAdminLogin && (
-              <div className="flex justify-end mt-8">
-                <button
-                  onClick={onAdminLogin}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow flex items-center gap-2 text-sm"
-                >
-                  <LogIn className="h-5 w-5" /> Admin Login
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

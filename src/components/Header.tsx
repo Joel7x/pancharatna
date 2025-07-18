@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, Menu, User, Heart, Star, Gift, ShoppingBag, LogIn, MapPin, ChevronDown, Globe } from 'lucide-react';
 
 interface HeaderProps {
@@ -14,6 +14,36 @@ interface HeaderProps {
 
 export default function Header({ cartCount, onMenuToggle, isMenuOpen, onCartToggle, onWishlistToggle, wishlistCount, onLoginClick, userActions }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [location, setLocation] = useState<{ city: string; pincode: string } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+
+  useEffect(() => {
+    setLocationStatus('loading');
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            // Use OpenStreetMap Nominatim API for reverse geocoding
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+            // Try to extract city and pincode
+            const city = data.address.city || data.address.town || data.address.village || data.address.state || 'Unknown City';
+            const pincode = data.address.postcode || 'Unknown';
+            setLocation({ city, pincode });
+            setLocationStatus('idle');
+          } catch (err) {
+            setLocationStatus('error');
+          }
+        },
+        () => {
+          setLocationStatus('error');
+        }
+      );
+    } else {
+      setLocationStatus('error');
+    }
+  }, []);
 
   return (
     <header className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white sticky top-0 z-50 shadow-lg w-full overflow-x-hidden">
@@ -33,14 +63,18 @@ export default function Header({ cartCount, onMenuToggle, isMenuOpen, onCartTogg
             <MapPin className="h-5 w-5 text-yellow-400" />
             <div className="flex flex-col leading-tight">
               <span className="text-[10px] text-gray-300">Deliver to</span>
-              <span className="text-xs font-bold text-white">Guest Pune 411014</span>
+              <span className="text-xs font-bold text-white">
+                {locationStatus === 'loading' && 'Detecting location...'}
+                {locationStatus === 'error' && 'Guest Pune 411014'}
+                {location && locationStatus === 'idle' && `${location.city} ${location.pincode}`}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <form className="flex flex-1 max-w-2xl mx-2 bg-white rounded overflow-hidden shadow focus-within:ring-2 focus-within:ring-yellow-400">
-          <select className="bg-gray-100 text-xs text-gray-700 px-2 py-2 border-none outline-none">
+        <form className="flex flex-1 max-w-2xl mx-2 bg-white rounded-2xl overflow-hidden shadow focus-within:ring-2 focus-within:ring-yellow-400">
+          <select className="bg-gray-100 text-xs text-gray-700 px-2 py-2 border-none outline-none rounded-l-2xl">
             <option>All</option>
             <option>Toys</option>
             <option>Stationary</option>
@@ -53,9 +87,10 @@ export default function Header({ cartCount, onMenuToggle, isMenuOpen, onCartTogg
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search Pancharatna.in"
-            className="flex-1 px-3 py-2 text-gray-900 text-sm outline-none border-none bg-white"
+            className="flex-1 px-3 py-2 text-gray-900 text-sm outline-none border-none bg-white rounded-none"
+            style={{ borderRadius: 0 }}
           />
-          <button type="submit" className="bg-yellow-400 hover:bg-yellow-500 px-4 flex items-center justify-center">
+          <button type="submit" className="bg-yellow-400 hover:bg-yellow-500 px-4 flex items-center justify-center rounded-r-2xl">
             <Search className="h-5 w-5 text-[#131921]" />
           </button>
         </form>
